@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_application/data/app_date.dart';
+import '../data/app_data.dart';
+import '../data/app_date.dart';
 import 'module_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  // ... [Keep your _showLoginDialog and _logout functions EXACTLY as they are] ...
   void _showLoginDialog() {
     TextEditingController usernameController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
@@ -23,42 +23,28 @@ class _HomePageState extends State<HomePage> {
           children: [
             TextField(
               controller: usernameController,
-              decoration: InputDecoration(
-                labelText: 'Username',
-                border: OutlineInputBorder(),
-              ),
+              decoration: InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person)),
             ),
             SizedBox(height: 15),
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
+              decoration: InputDecoration(labelText: 'Password', prefixIcon: Icon(Icons.lock)),
               obscureText: true,
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              if (usernameController.text == 'admin' &&
-                  passwordController.text == 'admin') {
+              if (usernameController.text == 'admin' && passwordController.text == 'admin') {
                 setState(() {
                   AppData.currentUser = usernameController.text;
                 });
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Login successful!')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login successful!')));
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Invalid credentials. Use admin/admin')),
-                );
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Invalid credentials. Use admin/admin')));
               }
             },
             child: Text('Login'),
@@ -72,9 +58,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       AppData.currentUser = null;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logged out successfully')),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Logged out successfully')));
   }
 
   @override
@@ -92,96 +76,98 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             children: [
               Padding(
-                padding: EdgeInsets.all(20),
+                padding: EdgeInsets.fromLTRB(20, 30, 20, 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Modules',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dashboard',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                        ),
+                        Text(
+                          'Modules',
+                          style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                     AppData.currentUser == null
-                        ? ElevatedButton(
-                            onPressed: _showLoginDialog,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 25, vertical: 12),
-                            ),
-                            child: Text('LOGIN'),
-                          )
+                        ? IconButton(
+                      onPressed: _showLoginDialog,
+                      icon: Icon(Icons.login, color: Colors.white, size: 30),
+                      tooltip: 'Login',
+                    )
                         : Row(
-                            children: [
-                              Text(
-                                'Hi, ${AppData.currentUser}',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              ElevatedButton(
-                                onPressed: _logout,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 10),
-                                ),
-                                child: Text('LOGOUT'),
-                              ),
-                            ],
-                          ),
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.white24,
+                          child: Icon(Icons.person, color: Colors.white),
+                        ),
+                        SizedBox(width: 10),
+                        IconButton(
+                          onPressed: _logout,
+                          icon: Icon(Icons.logout, color: Colors.white70),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(20),
+                child: Container(
+                  margin: EdgeInsets.only(top: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+                  ),
                   child: GridView.builder(
+                    padding: EdgeInsets.only(top: 30, bottom: 30),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      childAspectRatio: 1.2,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 1.0,
                     ),
                     itemCount: AppData.modules.length,
                     itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  ModulePage(module: AppData.modules[index]),
-                            ),
-                          ).then((_) => setState(() {}));
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 10,
-                                offset: Offset(0, 5),
+                      return Card(
+                        elevation: 4,
+                        shadowColor: Colors.black26,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ModulePage(module: AppData.modules[index])),
+                            ).then((_) => setState(() {}));
+                          },
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(15),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF667eea).withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.book, size: 35, color: Color(0xFF667eea)),
+                              ),
+                              SizedBox(height: 15),
+                              Text(
+                                AppData.modules[index].name,
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                                textAlign: TextAlign.center,
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                '${AppData.modules[index].students.length} Students',
+                                style: TextStyle(color: Colors.grey),
                               ),
                             ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              AppData.modules[index].name,
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF667eea),
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
                           ),
                         ),
                       );
