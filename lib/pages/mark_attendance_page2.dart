@@ -8,11 +8,7 @@ class MarkAttendancePage2 extends StatefulWidget {
   final String date;
   final int hours;
 
-  const MarkAttendancePage2({super.key, 
-    required this.module,
-    required this.date,
-    required this.hours,
-  });
+  MarkAttendancePage2({required this.module, required this.date, required this.hours});
 
   @override
   _MarkAttendancePage2State createState() => _MarkAttendancePage2State();
@@ -24,80 +20,79 @@ class _MarkAttendancePage2State extends State<MarkAttendancePage2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Mark Attendance'),
-        backgroundColor: Color(0xFF667eea),
-      ),
+      appBar: AppBar(title: Text('Select Students')),
       body: Column(
         children: [
+          Container(
+            padding: EdgeInsets.all(15),
+            color: Colors.grey[100],
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.grey),
+                SizedBox(width: 10),
+                Text('Tap to mark as Present', style: TextStyle(color: Colors.grey[700])),
+                Spacer(),
+                Text('${selectedStudents.length}/${widget.module.students.length}',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF667eea))),
+              ],
+            ),
+          ),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.all(20),
+            child: ListView.separated(
+              padding: EdgeInsets.all(15),
               itemCount: widget.module.students.length,
+              separatorBuilder: (ctx, i) => SizedBox(height: 10),
               itemBuilder: (context, index) {
                 Student student = widget.module.students[index];
                 bool isSelected = selectedStudents.contains(student.id);
 
-                return GestureDetector(
+                return InkWell(
                   onTap: () {
                     setState(() {
-                      if (isSelected) {
-                        selectedStudents.remove(student.id);
-                      } else {
-                        selectedStudents.add(student.id);
-                      }
+                      if (isSelected) selectedStudents.remove(student.id);
+                      else selectedStudents.add(student.id);
                     });
                   },
-                  child: Container(
-                    margin: EdgeInsets.only(bottom: 10),
-                    padding: EdgeInsets.all(15),
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 200),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.green[100] : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(10),
+                      color: isSelected ? Colors.white : Colors.white,
                       border: Border.all(
-                        color: isSelected ? Colors.green : Colors.transparent,
-                        width: 2,
+                          color: isSelected ? Colors.green : Colors.transparent,
+                          width: 2
                       ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            blurRadius: 5,
+                            offset: Offset(0, 3)
+                        )
+                      ],
                     ),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: isSelected,
-                          onChanged: (value) {
-                            setState(() {
-                              if (value!) {
-                                selectedStudents.add(student.id);
-                              } else {
-                                selectedStudents.remove(student.id);
-                              }
-                            });
-                          },
-                        ),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                student.regNo,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF667eea),
-                                  fontSize: 16,
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                student.name,
-                                style: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isSelected ? Colors.green[100] : Colors.grey[200],
+                        child: Text(
+                          student.name[0],
+                          style: TextStyle(
+                              color: isSelected ? Colors.green[800] : Colors.grey[600],
+                              fontWeight: FontWeight.bold
                           ),
                         ),
-                      ],
+                      ),
+                      title: Text(student.name, style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(student.regNo),
+                      trailing: AnimatedContainer(
+                        duration: Duration(milliseconds: 200),
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.green : Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.check, color: Colors.white, size: 20),
+                      ),
                     ),
                   ),
                 );
@@ -107,47 +102,42 @@ class _MarkAttendancePage2State extends State<MarkAttendancePage2> {
           Padding(
             padding: EdgeInsets.all(20),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Back'),
+                    style: OutlinedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 15)),
                   ),
-                  child: Text('CANCEL', style: TextStyle(fontSize: 16)),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    for (var student in widget.module.students) {
-                      student.attendanceRecords.add(
-                        AttendanceRecord(
-                          date: widget.date,
-                          hours: widget.hours,
-                          isPresent: selectedStudents.contains(student.id),
+                SizedBox(width: 15),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      for (var student in widget.module.students) {
+                        student.attendanceRecords.add(
+                          AttendanceRecord(
+                            date: widget.date,
+                            hours: widget.hours,
+                            isPresent: selectedStudents.contains(student.id),
+                          ),
+                        );
+                      }
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Attendance Saved Successfully'),
+                          backgroundColor: Colors.green,
+                          behavior: SnackBarBehavior.floating,
                         ),
                       );
-                    }
-
-                    Navigator.popUntil(
-                        context, (route) => route.isFirst);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Attendance saved successfully!')),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                    },
+                    child: Text('Finish'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                     ),
                   ),
-                  child: Text('SAVE', style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),

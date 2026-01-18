@@ -1,115 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_application/data/app_date.dart';
+import '../data/app_date.dart';
 import '../models/module.dart';
+import '../data/app_data.dart';
 import 'mark_attendance_page1.dart';
 import 'view_percentage_page.dart';
 
 class ModulePage extends StatefulWidget {
   final Module module;
 
-  const ModulePage({super.key, required this.module});
+  ModulePage({required this.module});
 
   @override
   _ModulePageState createState() => _ModulePageState();
 }
 
 class _ModulePageState extends State<ModulePage> {
-  @override
-  Widget build(BuildContext context) {
-    double overallPercentage = widget.module.getOverallAttendancePercentage();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.module.name),
-        backgroundColor: Color(0xFF667eea),
-      ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Student Attendance',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 30),
-              Container(
-                width: 180,
-                height: 180,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.green,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 15,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    '${overallPercentage.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(height: 50),
-              ElevatedButton(
-                onPressed: () {
-                  if (AppData.currentUser == null) {
-                    _showLoginDialog(context);
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            MarkAttendancePage1(module: widget.module),
-                      ),
-                    ).then((_) => setState(() {}));
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF667eea),
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('Mark Attendance', style: TextStyle(fontSize: 18)),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ViewPercentagePage(module: widget.module),
-                    ),
-                  ).then((_) => setState(() {}));
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text('View Percentage', style: TextStyle(fontSize: 18)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
+  // --- RESTORED LOGIC: Login Dialog ---
   void _showLoginDialog(BuildContext context) {
     TextEditingController usernameController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
@@ -117,6 +24,7 @@ class _ModulePageState extends State<ModulePage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: Text('Login Required'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -125,7 +33,8 @@ class _ModulePageState extends State<ModulePage> {
               controller: usernameController,
               decoration: InputDecoration(
                 labelText: 'Username',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                prefixIcon: Icon(Icons.person),
               ),
             ),
             SizedBox(height: 15),
@@ -133,7 +42,8 @@ class _ModulePageState extends State<ModulePage> {
               controller: passwordController,
               decoration: InputDecoration(
                 labelText: 'Password',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                prefixIcon: Icon(Icons.lock),
               ),
               obscureText: true,
             ),
@@ -148,8 +58,12 @@ class _ModulePageState extends State<ModulePage> {
             onPressed: () {
               if (usernameController.text == 'admin' &&
                   passwordController.text == 'admin') {
-                AppData.currentUser = usernameController.text;
+                setState(() {
+                  AppData.currentUser = usernameController.text;
+                });
                 Navigator.pop(context);
+
+                // Automatically push to Mark Attendance page after successful login
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -157,6 +71,10 @@ class _ModulePageState extends State<ModulePage> {
                         MarkAttendancePage1(module: widget.module),
                   ),
                 ).then((_) => setState(() {}));
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Login successful!')),
+                );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Invalid credentials')),
@@ -166,6 +84,146 @@ class _ModulePageState extends State<ModulePage> {
             child: Text('Login'),
           ),
         ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double overallPercentage = widget.module.getOverallAttendancePercentage();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.module.name, style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Color(0xFF667eea),
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Top Section with Percentage Circle
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 40),
+              decoration: BoxDecoration(
+                color: Color(0xFF667eea),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 150,
+                        height: 150,
+                        child: CircularProgressIndicator(
+                          value: overallPercentage / 100,
+                          strokeWidth: 10,
+                          backgroundColor: Colors.white24,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          Text(
+                            '${overallPercentage.toStringAsFixed(0)}%',
+                            style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                          Text(
+                            'Attendance',
+                            style: TextStyle(color: Colors.white70),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 40),
+            // Menu Buttons
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  _buildMenuButton(
+                    context: context,
+                    title: 'Mark Attendance',
+                    subtitle: 'Record new session',
+                    icon: Icons.add_task,
+                    color: Colors.orange,
+                    onTap: () {
+                      // --- RESTORED LOGIC: Check Login ---
+                      if (AppData.currentUser == null) {
+                        _showLoginDialog(context);
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MarkAttendancePage1(module: widget.module),
+                          ),
+                        ).then((_) => setState(() {}));
+                      }
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  _buildMenuButton(
+                    context: context,
+                    title: 'View Analytics',
+                    subtitle: 'Check student percentages',
+                    icon: Icons.analytics,
+                    color: Colors.purple,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ViewPercentagePage(module: widget.module),
+                        ),
+                      ).then((_) => setState(() {}));
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuButton({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(20),
+        onTap: onTap,
+        leading: Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+              color: color.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 30),
+        ),
+        title: Text(title,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
       ),
     );
   }
