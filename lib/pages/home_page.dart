@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/app_data.dart';
-//import '../data/app_date.dart';
+import '../models/module.dart';
+import '../services/firestore_service.dart';
 import 'module_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -9,7 +10,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // ... [Keep your _showLoginDialog and _logout functions EXACTLY as they are] ...
+  final FirestoreService _firestoreService = FirestoreService();
+
   void _showLoginDialog() {
     TextEditingController usernameController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
@@ -83,14 +85,8 @@ class _HomePageState extends State<HomePage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Dashboard',
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
-                        Text(
-                          'Modules',
-                          style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                        ),
+                        Text('Dashboard', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                        Text('Modules', style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     AppData.currentUser == null
@@ -123,53 +119,74 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
                   ),
-                  child: GridView.builder(
-                    padding: EdgeInsets.only(top: 30, bottom: 30),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: AppData.modules.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        elevation: 4,
-                        shadowColor: Colors.black26,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => ModulePage(module: AppData.modules[index])),
-                            ).then((_) => setState(() {}));
-                          },
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(15),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF667eea).withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.book, size: 35, color: Color(0xFF667eea)),
-                              ),
-                              SizedBox(height: 15),
-                              Text(
-                                AppData.modules[index].name,
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                '${AppData.modules[index].students.length} Students',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
+                  child: StreamBuilder<List<Module>>(
+                    stream: _firestoreService.getModules(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+                      
+                      // Check if empty, allow seeding
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(
+                          child: ElevatedButton(
+                            onPressed: () => _firestoreService.seedModules(),
+                            child: Text("Initialize Default Modules"),
                           ),
+                        );
+                      }
+
+                      final modules = snapshot.data!;
+
+                      return GridView.builder(
+                        padding: EdgeInsets.only(top: 30, bottom: 30),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 1.0,
                         ),
+                        itemCount: modules.length,
+                        itemBuilder: (context, index) {
+                          return Card(
+                            elevation: 4,
+                            shadowColor: Colors.black26,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => ModulePage(module: modules[index])),
+                                ).then((_) => setState(() {}));
+                              },
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(15),
+                                    decoration: BoxDecoration(
+                                      color: Color(0xFF667eea).withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.book, size: 35, color: Color(0xFF667eea)),
+                                  ),
+                                  SizedBox(height: 15),
+                                  Text(
+                                    modules[index].name,
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(height: 5),
+                                  Text(
+                                    'Tap to view',
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),

@@ -1,7 +1,7 @@
 import 'student.dart';
 
 class Module {
-  int id;
+  String id; // Changed to String
   String name;
   List<Student> students;
 
