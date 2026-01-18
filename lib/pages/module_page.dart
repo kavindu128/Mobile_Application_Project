@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-//import '../data/app_date.dart';
 import '../models/module.dart';
+import '../models/student.dart';
 import '../data/app_data.dart';
+import '../services/firestore_service.dart';
 import 'mark_attendance_page1.dart';
 import 'view_percentage_page.dart';
 
@@ -15,8 +16,8 @@ class ModulePage extends StatefulWidget {
 }
 
 class _ModulePageState extends State<ModulePage> {
+  final FirestoreService _firestoreService = FirestoreService();
 
-  // --- RESTORED LOGIC: Login Dialog ---
   void _showLoginDialog(BuildContext context) {
     TextEditingController usernameController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
@@ -62,16 +63,13 @@ class _ModulePageState extends State<ModulePage> {
                   AppData.currentUser = usernameController.text;
                 });
                 Navigator.pop(context);
-
-                // Automatically push to Mark Attendance page after successful login
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
                         MarkAttendancePage1(module: widget.module),
                   ),
-                ).then((_) => setState(() {}));
-
+                );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Login successful!')),
                 );
@@ -90,113 +88,126 @@ class _ModulePageState extends State<ModulePage> {
 
   @override
   Widget build(BuildContext context) {
-    double overallPercentage = widget.module.getOverallAttendancePercentage();
+    return StreamBuilder<List<Student>>(
+      stream: _firestoreService.getStudents(widget.module.id),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Scaffold(
+            appBar: AppBar(title: Text(widget.module.name), backgroundColor: Color(0xFF667eea)),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.module.name, style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Color(0xFF667eea),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Top Section with Percentage Circle
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 40),
-              decoration: BoxDecoration(
-                color: Color(0xFF667eea),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(40),
-                  bottomRight: Radius.circular(40),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Stack(
-                    alignment: Alignment.center,
+        // Update module students to calculate percentage
+        widget.module.students = snapshot.data!;
+        double overallPercentage = widget.module.getOverallAttendancePercentage();
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(widget.module.name, style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Color(0xFF667eea),
+            elevation: 0,
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                // Top Section with Percentage Circle
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF667eea),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
+                    ),
+                  ),
+                  child: Column(
                     children: [
-                      SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: CircularProgressIndicator(
-                          value: overallPercentage / 100,
-                          strokeWidth: 10,
-                          backgroundColor: Colors.white24,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                      Column(
+                      Stack(
+                        alignment: Alignment.center,
                         children: [
-                          Text(
-                            '${overallPercentage.toStringAsFixed(0)}%',
-                            style: TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                          SizedBox(
+                            width: 150,
+                            height: 150,
+                            child: CircularProgressIndicator(
+                              value: overallPercentage / 100,
+                              strokeWidth: 10,
+                              backgroundColor: Colors.white24,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
                           ),
-                          Text(
-                            'Attendance',
-                            style: TextStyle(color: Colors.white70),
-                          )
+                          Column(
+                            children: [
+                              Text(
+                                '${overallPercentage.toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                              Text(
+                                'Attendance',
+                                style: TextStyle(color: Colors.white70),
+                              )
+                            ],
+                          ),
                         ],
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: 40),
-            // Menu Buttons
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _buildMenuButton(
-                    context: context,
-                    title: 'Mark Attendance',
-                    subtitle: 'Record new session',
-                    icon: Icons.add_task,
-                    color: Colors.orange,
-                    onTap: () {
-                      // --- RESTORED LOGIC: Check Login ---
-                      if (AppData.currentUser == null) {
-                        _showLoginDialog(context);
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                MarkAttendancePage1(module: widget.module),
-                          ),
-                        ).then((_) => setState(() {}));
-                      }
-                    },
+                ),
+                SizedBox(height: 40),
+                // Menu Buttons
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      _buildMenuButton(
+                        context: context,
+                        title: 'Mark Attendance',
+                        subtitle: 'Record new session',
+                        icon: Icons.add_task,
+                        color: Colors.orange,
+                        onTap: () {
+                          if (AppData.currentUser == null) {
+                            _showLoginDialog(context);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    MarkAttendancePage1(module: widget.module),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      SizedBox(height: 20),
+                      _buildMenuButton(
+                        context: context,
+                        title: 'View Analytics',
+                        subtitle: 'Check student percentages',
+                        icon: Icons.analytics,
+                        color: Colors.purple,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ViewPercentagePage(module: widget.module),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 20),
-                  _buildMenuButton(
-                    context: context,
-                    title: 'View Analytics',
-                    subtitle: 'Check student percentages',
-                    icon: Icons.analytics,
-                    color: Colors.purple,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ViewPercentagePage(module: widget.module),
-                        ),
-                      ).then((_) => setState(() {}));
-                    },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 
